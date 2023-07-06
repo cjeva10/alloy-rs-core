@@ -50,6 +50,9 @@ pub use item::{AbiItem, Constructor, Error, Event, Fallback, Function, Receive};
 mod param;
 pub use param::{EventParam, Param};
 
+mod param_kind;
+pub use param_kind::ParamKind;
+
 pub(crate) mod utils;
 
 /// A JSON ABI function's state mutability.
