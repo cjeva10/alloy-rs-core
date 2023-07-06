@@ -393,3 +393,145 @@ impl<'de> Visitor<'de> for ContractAbiObjectVisitor {
         })
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::param::Param;
+    use crate::{Constructor, Function, JsonAbi, StateMutability};
+    use alloc::{collections::btree_map, string::String, vec::Vec};
+    use btree_map::BTreeMap;
+
+    #[test]
+    fn empty() {
+        let json = "[]";
+
+        let deserialized: JsonAbi = serde_json::from_str(json).unwrap();
+
+        assert_eq!(
+            deserialized,
+            JsonAbi {
+                constructor: None,
+                functions: BTreeMap::new(),
+                events: BTreeMap::new(),
+                errors: BTreeMap::new(),
+                receive: None,
+                fallback: None,
+            }
+        );
+    }
+
+    #[test]
+    fn constructor() {
+        let json = r#"
+			[
+				{
+					"type": "constructor",
+					"inputs": [
+						{
+							"name":"a",
+							"type":"address"
+						}
+					],
+                    "stateMutability": "nonpayable"
+				}
+			]
+		"#;
+
+        let deserialized: JsonAbi = serde_json::from_str(json).unwrap();
+
+        assert_eq!(
+            deserialized,
+            JsonAbi {
+                constructor: Some(Constructor {
+                    inputs: Vec::from([Param {
+                        name: "a".to_string(),
+                        ty: String::from("address"),
+                        components: Vec::new(),
+                        internal_type: None
+                    }]),
+                    state_mutability: crate::StateMutability::NonPayable,
+                }),
+                functions: BTreeMap::new(),
+                events: BTreeMap::new(),
+                errors: BTreeMap::new(),
+                receive: None,
+                fallback: None,
+            }
+        );
+    }
+
+    #[test]
+    fn functions() {
+        let json = r#"
+            [
+                {
+                    "type": "function",
+                    "name": "foo",
+                    "stateMutability": "view",
+                    "inputs": [
+                        {
+                            "name":"a",
+                            "type":"address"
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "name": "res",
+                            "type":"address"
+                        }
+                    ]
+                },
+                {
+                    "type": "function",
+                    "stateMutability": "pure",
+                    "name": "bar",
+                    "inputs": [],
+                    "outputs": []
+                }
+            ]
+        "#;
+
+        let deserialized: JsonAbi = serde_json::from_str(json).unwrap();
+
+        assert_eq!(
+            deserialized,
+            JsonAbi {
+                constructor: None,
+                functions: BTreeMap::from_iter(Vec::from([
+                    (
+                        "foo".to_string(),
+                        Vec::from([Function {
+                            name: "foo".to_string(),
+                            inputs: Vec::from([Param {
+                                name: "a".to_string(),
+                                ty: String::from("address"),
+                                internal_type: None,
+                                components: Vec::new(),
+                            }]),
+                            outputs: Vec::from([Param {
+                                name: "res".to_string(),
+                                ty: String::from("address"),
+                                internal_type: None,
+                                components: Vec::new(),
+                            }]),
+                            state_mutability: StateMutability::View,
+                        }])
+                    ),
+                    (
+                        "bar".to_string(),
+                        Vec::from([Function {
+                            name: "bar".to_string(),
+                            inputs: Vec::new(),
+                            outputs: Vec::new(),
+                            state_mutability: StateMutability::Pure,
+                        }])
+                    ),
+                ])),
+                events: BTreeMap::new(),
+                errors: BTreeMap::new(),
+                receive: None,
+                fallback: None,
+            }
+        );
+    }
+}
